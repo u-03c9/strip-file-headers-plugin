@@ -10,7 +10,6 @@ final class StripperConfig
 {
     private const DEFAULT_DIRS = ['vendor'];
     private const DEFAULT_EXTENSIONS = ['php', 'phtml', 'xml'];
-    private const DEFAULT_SCOPES = ['vendor'];
 
     public string $root;
 
@@ -64,7 +63,7 @@ final class StripperConfig
 
         return new self(
             self::stringSetting($settings, 'root', $root),
-            self::dirsFromSettings($settings),
+            self::listSetting($settings, 'dirs', self::DEFAULT_DIRS),
             self::listSetting($settings, 'extensions', self::DEFAULT_EXTENSIONS),
             self::listSetting($settings, 'exclude', []),
             self::boolSetting($settings, 'enabled', true)
@@ -80,7 +79,7 @@ final class StripperConfig
 
         return new self(
             $root,
-            self::dirsFromSettings($settings),
+            self::listSetting($settings, 'dirs', self::DEFAULT_DIRS),
             self::listSetting($settings, 'extensions', self::DEFAULT_EXTENSIONS),
             self::listSetting($settings, 'exclude', []),
             self::boolSetting($settings, 'enabled', true)
@@ -162,48 +161,6 @@ final class StripperConfig
         }
 
         return filter_var($settings[$key], FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE) ?? $default;
-    }
-
-    /**
-     * @param array<string, mixed> $settings
-     * @return list<string>
-     */
-    private static function dirsFromSettings(array $settings): array
-    {
-        if (array_key_exists('dirs', $settings)) {
-            return self::listSetting($settings, 'dirs', self::DEFAULT_DIRS);
-        }
-
-        return self::dirsForNames(self::listSetting($settings, 'scopes', self::DEFAULT_SCOPES));
-    }
-
-    /**
-     * @param list<string> $names
-     * @return list<string>
-     */
-    private static function dirsForNames(array $names): array
-    {
-        $dirs = [];
-        foreach ($names as $name) {
-            $dir = self::dirForName($name);
-            if ($dir !== null) {
-                $dirs[] = $dir;
-            }
-        }
-
-        return $dirs !== [] ? $dirs : self::DEFAULT_DIRS;
-    }
-
-    private static function dirForName(string $name): ?string
-    {
-        switch (strtolower(trim($name))) {
-            case 'app':
-                return 'app';
-            case 'vendor':
-                return 'vendor';
-            default:
-                return null;
-        }
     }
 
     /**

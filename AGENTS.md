@@ -35,7 +35,7 @@ No automated test suite is currently configured. For behavior changes, run synta
 
 ## Commit & Pull Request Guidelines
 
-The current git history uses short, imperative lowercase messages such as `init` and `add scopes`. Keep commits focused and similarly direct, for example `add exclude handling`.
+The current git history uses short, imperative lowercase messages such as `init`. Keep commits focused and similarly direct, for example `add exclude handling`.
 
 Pull requests should include a concise summary, the commands run, and a before/after example when stripping behavior changes. Note any license-impacting changes clearly because this tool can rewrite third-party files under `vendor/`.
 

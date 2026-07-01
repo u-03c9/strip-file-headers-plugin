@@ -40,6 +40,20 @@ composer config allow-plugins.u-03c9/strip-file-headers-plugin true
 composer require --dev u-03c9/strip-file-headers-plugin:dev-main
 ```
 
+If Composer reports that the GitHub API limit is exhausted while resolving the repository, the plugin has not run yet. Composer is rate-limited while reading package metadata from GitHub. For local development, prefer the path repository install above because it does not call GitHub. For a public GitHub repository without a token, configure the repository with `no-api` so Composer clones it through Git instead of using the GitHub API:
+
+```sh
+composer config repositories.strip-file-headers '{"type":"vcs","url":"https://github.com/u-03c9/strip-file-headers-plugin","no-api":true}'
+composer config allow-plugins.u-03c9/strip-file-headers-plugin true
+composer require --dev u-03c9/strip-file-headers-plugin:dev-main
+```
+
+Alternatively, configure a GitHub OAuth token for Composer. Do not commit `auth.json`:
+
+```sh
+composer config --global github-oauth.github.com YOUR_TOKEN
+```
+
 After tagging a release:
 
 ```sh
@@ -78,7 +92,7 @@ Default configuration:
     "extra": {
         "strip-file-headers": {
             "enabled": true,
-            "scopes": ["vendor"],
+            "dirs": ["vendor"],
             "extensions": ["php", "phtml", "xml"],
             "exclude": []
         }
@@ -86,30 +100,25 @@ Default configuration:
 }
 ```
 
-Use `scopes` to choose named scan locations for the automatic Composer hook:
+Use `dirs` to choose scan locations for the automatic Composer hook:
 
 ```json
 {
     "extra": {
         "strip-file-headers": {
-            "scopes": ["vendor"]
+            "dirs": ["vendor"]
         }
     }
 }
 ```
 
-Allowed values are:
-
-- `app`: scan `app/` only
-- `vendor`: scan `vendor/` only
-
-List every named location you want scanned:
+List every directory you want scanned:
 
 ```json
 {
     "extra": {
         "strip-file-headers": {
-            "scopes": ["vendor", "app"]
+            "dirs": ["vendor", "app"]
         }
     }
 }
@@ -117,7 +126,7 @@ List every named location you want scanned:
 
 This scans `vendor/` and `app/`.
 
-For custom paths, use `dirs`. When `dirs` is set, it replaces `scopes`:
+Custom paths are supported:
 
 ```json
 {
