@@ -94,7 +94,11 @@ Default configuration:
             "enabled": true,
             "dirs": ["vendor"],
             "extensions": ["php", "phtml", "xml"],
-            "exclude": []
+            "exclude": [
+                "vendor/autoload.php",
+                "vendor/composer",
+                "app/etc"
+            ]
         }
     }
 }

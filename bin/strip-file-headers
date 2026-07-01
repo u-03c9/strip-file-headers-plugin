@@ -155,6 +155,7 @@ Options:
 
 Defaults:
   --dir=vendor --ext=php --ext=phtml --ext=xml
+  --exclude=vendor/autoload.php --exclude=vendor/composer --exclude=app/etc
 
 Directories may also be passed as positional arguments.
 

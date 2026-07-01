@@ -10,6 +10,7 @@ final class StripperConfig
 {
     private const DEFAULT_DIRS = ['vendor'];
     private const DEFAULT_EXTENSIONS = ['php', 'phtml', 'xml'];
+    private const DEFAULT_EXCLUDE = ['vendor/autoload.php', 'vendor/composer', 'app/etc'];
 
     public string $root;
 
@@ -39,7 +40,7 @@ final class StripperConfig
         string $root,
         array $dirs = self::DEFAULT_DIRS,
         array $extensions = self::DEFAULT_EXTENSIONS,
-        array $exclude = [],
+        array $exclude = self::DEFAULT_EXCLUDE,
         bool $enabled = true
     ) {
         $this->root = rtrim($root, DIRECTORY_SEPARATOR);
@@ -65,7 +66,7 @@ final class StripperConfig
             self::stringSetting($settings, 'root', $root),
             self::listSetting($settings, 'dirs', self::DEFAULT_DIRS),
             self::listSetting($settings, 'extensions', self::DEFAULT_EXTENSIONS),
-            self::listSetting($settings, 'exclude', []),
+            self::listSetting($settings, 'exclude', self::DEFAULT_EXCLUDE),
             self::boolSetting($settings, 'enabled', true)
         );
     }
@@ -81,7 +82,7 @@ final class StripperConfig
             $root,
             self::listSetting($settings, 'dirs', self::DEFAULT_DIRS),
             self::listSetting($settings, 'extensions', self::DEFAULT_EXTENSIONS),
-            self::listSetting($settings, 'exclude', []),
+            self::listSetting($settings, 'exclude', self::DEFAULT_EXCLUDE),
             self::boolSetting($settings, 'enabled', true)
         );
     }
