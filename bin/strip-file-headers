@@ -1,0 +1,155 @@
+#!/usr/bin/env php
+<?php
+
+declare(strict_types=1);
+
+use Project\StripFileHeaders\HeaderStripper;
+use Project\StripFileHeaders\StripperConfig;
+
+$options = parseOptions($argv);
+if ($options['help']) {
+    echo helpText();
+    exit(0);
+}
+
+$autoloadCandidates = [
+    __DIR__ . '/../vendor/autoload.php',
+    __DIR__ . '/../../../autoload.php',
+];
+
+$autoloaded = false;
+foreach ($autoloadCandidates as $autoload) {
+    if (is_file($autoload)) {
+        require $autoload;
+        $autoloaded = true;
+        break;
+    }
+}
+
+if (!$autoloaded) {
+    $sourceDir = __DIR__ . '/../src';
+    if (is_file($sourceDir . '/StripResult.php')) {
+        require $sourceDir . '/StripResult.php';
+        require $sourceDir . '/StripperConfig.php';
+        require $sourceDir . '/HeaderStripper.php';
+        $autoloaded = true;
+    }
+}
+
+if (!$autoloaded) {
+    fwrite(STDERR, "Unable to locate Composer autoload file or local source classes.\n");
+    exit(1);
+}
+
+$config = StripperConfig::fromCliOptions([
+    'root' => $options['root'],
+    'dirs' => $options['dirs'],
+    'extensions' => $options['extensions'],
+    'exclude' => $options['exclude'],
+]);
+
+$stripper = new HeaderStripper();
+$result = $stripper->strip(
+    $config,
+    $options['dry-run'],
+    $options['verbose'] || $options['dry-run'],
+    static function (string $message): void {
+        echo $message . PHP_EOL;
+    }
+);
+
+printf(
+    "[strip-file-headers] scanned %d file(s); %s %d file(s).\n",
+    $result->scanned,
+    $options['dry-run'] ? 'would strip' : 'stripped',
+    $result->changed
+);
+
+/**
+ * @param list<string> $argv
+ * @return array{dry-run: bool, verbose: bool, help: bool, root: string, dirs: list<string>, extensions: list<string>, exclude: list<string>}
+ */
+function parseOptions(array $argv): array
+{
+    $options = [
+        'dry-run' => false,
+        'verbose' => false,
+        'help' => false,
+        'root' => getcwd() ?: '.',
+        'dirs' => ['app', 'vendor'],
+        'extensions' => ['php', 'phtml', 'xml'],
+        'exclude' => [],
+    ];
+
+    foreach (array_slice($argv, 1) as $arg) {
+        if ($arg === '--dry-run') {
+            $options['dry-run'] = true;
+            continue;
+        }
+
+        if ($arg === '--verbose' || $arg === '-v') {
+            $options['verbose'] = true;
+            continue;
+        }
+
+        if ($arg === '--help' || $arg === '-h') {
+            $options['help'] = true;
+            continue;
+        }
+
+        if (strpos($arg, '--root=') === 0) {
+            $options['root'] = substr($arg, 7);
+            continue;
+        }
+
+        if (strpos($arg, '--dir=') === 0) {
+            $options['dirs'][] = substr($arg, 6);
+            continue;
+        }
+
+        if (strpos($arg, '--ext=') === 0) {
+            $options['extensions'][] = ltrim(substr($arg, 6), '.');
+            continue;
+        }
+
+        if (strpos($arg, '--exclude=') === 0) {
+            $options['exclude'][] = substr($arg, 10);
+            continue;
+        }
+
+        fwrite(STDERR, "Unknown option: {$arg}\n\n");
+        fwrite(STDERR, helpText());
+        exit(1);
+    }
+
+    if ($options['dirs'] !== ['app', 'vendor']) {
+        $options['dirs'] = array_slice($options['dirs'], 2);
+    }
+
+    if ($options['extensions'] !== ['php', 'phtml', 'xml']) {
+        $options['extensions'] = array_slice($options['extensions'], 3);
+    }
+
+    return $options;
+}
+
+function helpText(): string
+{
+    return <<<'HELP'
+Usage:
+  strip-file-headers [options]
+
+Options:
+  --dry-run          List files that would change without writing them.
+  --verbose, -v      Print every stripped file.
+  --root=PATH        Project root. Defaults to the current working directory.
+  --dir=PATH         Directory to scan. May be passed more than once.
+  --ext=EXT          Extension to scan. May be passed more than once.
+  --exclude=PATH     Relative path to skip. May be passed more than once.
+  --help, -h         Show this help.
+
+Defaults:
+  --dir=app --dir=vendor --ext=php --ext=phtml --ext=xml
+
+HELP;
+}
