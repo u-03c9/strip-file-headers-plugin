@@ -64,9 +64,9 @@ The package also exposes a Composer binary:
 ```sh
 vendor/bin/strip-file-headers --dry-run
 vendor/bin/strip-file-headers --verbose
-vendor/bin/strip-file-headers --scope=app --dry-run
-vendor/bin/strip-file-headers --add-scope=app --dry-run
-vendor/bin/strip-file-headers --scope=vendor --verbose
+vendor/bin/strip-file-headers app --dry-run
+vendor/bin/strip-file-headers vendor app --dry-run
+vendor/bin/strip-file-headers --dir=vendor --verbose
 ```
 
 ## Configuration
@@ -78,8 +78,7 @@ Default configuration:
     "extra": {
         "strip-file-headers": {
             "enabled": true,
-            "scope": "vendor",
-            "scopes": [],
+            "scopes": ["vendor"],
             "extensions": ["php", "phtml", "xml"],
             "exclude": []
         }
@@ -87,13 +86,13 @@ Default configuration:
 }
 ```
 
-Use `scope` to choose the base scan location for the automatic Composer hook:
+Use `scopes` to choose named scan locations for the automatic Composer hook:
 
 ```json
 {
     "extra": {
         "strip-file-headers": {
-            "scope": "vendor"
+            "scopes": ["vendor"]
         }
     }
 }
@@ -103,23 +102,22 @@ Allowed values are:
 
 - `app`: scan `app/` only
 - `vendor`: scan `vendor/` only
-- `both`: scan `app/` and `vendor/`
 
-Use `scopes` to add named scopes from `composer.json` without replacing the default `vendor/` scan:
+List every named location you want scanned:
 
 ```json
 {
     "extra": {
         "strip-file-headers": {
-            "scopes": ["app"]
+            "scopes": ["vendor", "app"]
         }
     }
 }
 ```
 
-This scans both `vendor/` and `app/`.
+This scans `vendor/` and `app/`.
 
-For custom paths, use `dirs`. When `dirs` is set, it overrides the base `scope`; `scopes` is still appended:
+For custom paths, use `dirs`. When `dirs` is set, it replaces `scopes`:
 
 ```json
 {

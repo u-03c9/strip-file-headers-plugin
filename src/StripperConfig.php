@@ -10,7 +10,7 @@ final class StripperConfig
 {
     private const DEFAULT_DIRS = ['vendor'];
     private const DEFAULT_EXTENSIONS = ['php', 'phtml', 'xml'];
-    private const DEFAULT_SCOPE = 'vendor';
+    private const DEFAULT_SCOPES = ['vendor'];
 
     public string $root;
 
@@ -170,42 +170,39 @@ final class StripperConfig
      */
     private static function dirsFromSettings(array $settings): array
     {
-        $dirs = array_key_exists('dirs', $settings)
-            ? self::listSetting($settings, 'dirs', self::DEFAULT_DIRS)
-            : self::dirsForScope(self::stringSetting($settings, 'scope', self::DEFAULT_SCOPE));
-
-        if (!array_key_exists('scopes', $settings)) {
-            return $dirs;
+        if (array_key_exists('dirs', $settings)) {
+            return self::listSetting($settings, 'dirs', self::DEFAULT_DIRS);
         }
 
-        foreach (self::listSetting($settings, 'scopes', []) as $scope) {
-            foreach (self::dirsForScope($scope, []) as $dir) {
+        return self::dirsForNames(self::listSetting($settings, 'scopes', self::DEFAULT_SCOPES));
+    }
+
+    /**
+     * @param list<string> $names
+     * @return list<string>
+     */
+    private static function dirsForNames(array $names): array
+    {
+        $dirs = [];
+        foreach ($names as $name) {
+            $dir = self::dirForName($name);
+            if ($dir !== null) {
                 $dirs[] = $dir;
             }
         }
 
-        return $dirs;
+        return $dirs !== [] ? $dirs : self::DEFAULT_DIRS;
     }
 
-    /**
-     * @return list<string>
-     */
-    private static function dirsForScope(string $scope, ?array $default = null): array
+    private static function dirForName(string $name): ?string
     {
-        switch (strtolower($scope)) {
+        switch (strtolower(trim($name))) {
             case 'app':
-            case 'app-only':
-                return ['app'];
-
+                return 'app';
             case 'vendor':
-            case 'vendor-only':
-                return ['vendor'];
-
-            case 'both':
-                return ['app', 'vendor'];
-
+                return 'vendor';
             default:
-                return $default ?? self::DEFAULT_DIRS;
+                return null;
         }
     }
 

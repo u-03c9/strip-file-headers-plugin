@@ -27,7 +27,7 @@ When testing against another project, configure this package as a Composer path 
 
 Use PHP 7.4-compatible syntax and keep `declare(strict_types=1);` at the top of PHP files. Follow the existing style: 4-space indentation, final classes where extension is not intended, typed properties and return types, short guard clauses, and docblocks for array shapes or list types that PHP cannot express directly.
 
-Class names use PascalCase. Methods and variables use camelCase. Configuration keys and CLI flags use lowercase kebab-case, for example `strip-file-headers`, `--dry-run`, and `--scope=vendor`.
+Class names use PascalCase. Methods and variables use camelCase. Configuration keys and CLI flags use lowercase kebab-case, for example `strip-file-headers`, `--dry-run`, and `--dir=vendor`.
 
 ## Testing Guidelines
 
