@@ -58,9 +58,13 @@ final class StripperConfig
 
         $root = self::defaultRoot($composer);
 
+        $dirs = array_key_exists('dirs', $settings)
+            ? self::listSetting($settings, 'dirs', ['app', 'vendor'])
+            : self::dirsForScope(self::stringSetting($settings, 'scope', 'both'));
+
         return new self(
             self::stringSetting($settings, 'root', $root),
-            self::listSetting($settings, 'dirs', ['app', 'vendor']),
+            $dirs,
             self::listSetting($settings, 'extensions', ['php', 'phtml', 'xml']),
             self::listSetting($settings, 'exclude', []),
             self::boolSetting($settings, 'enabled', true)
@@ -74,9 +78,13 @@ final class StripperConfig
     {
         $root = self::stringSetting($settings, 'root', getcwd() ?: '.');
 
+        $dirs = array_key_exists('dirs', $settings)
+            ? self::listSetting($settings, 'dirs', ['app', 'vendor'])
+            : self::dirsForScope(self::stringSetting($settings, 'scope', 'both'));
+
         return new self(
             $root,
-            self::listSetting($settings, 'dirs', ['app', 'vendor']),
+            $dirs,
             self::listSetting($settings, 'extensions', ['php', 'phtml', 'xml']),
             self::listSetting($settings, 'exclude', []),
             self::boolSetting($settings, 'enabled', true)
@@ -158,6 +166,26 @@ final class StripperConfig
         }
 
         return filter_var($settings[$key], FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE) ?? $default;
+    }
+
+    /**
+     * @return list<string>
+     */
+    private static function dirsForScope(string $scope): array
+    {
+        switch (strtolower($scope)) {
+            case 'app':
+            case 'app-only':
+                return ['app'];
+
+            case 'vendor':
+            case 'vendor-only':
+                return ['vendor'];
+
+            case 'both':
+            default:
+                return ['app', 'vendor'];
+        }
     }
 
     /**

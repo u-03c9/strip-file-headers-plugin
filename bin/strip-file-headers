@@ -43,6 +43,7 @@ if (!$autoloaded) {
 
 $config = StripperConfig::fromCliOptions([
     'root' => $options['root'],
+    'scope' => $options['scope'],
     'dirs' => $options['dirs'],
     'extensions' => $options['extensions'],
     'exclude' => $options['exclude'],
@@ -67,7 +68,7 @@ printf(
 
 /**
  * @param list<string> $argv
- * @return array{dry-run: bool, verbose: bool, help: bool, root: string, dirs: list<string>, extensions: list<string>, exclude: list<string>}
+ * @return array{dry-run: bool, verbose: bool, help: bool, root: string, scope: string, dirs: list<string>, extensions: list<string>, exclude: list<string>}
  */
 function parseOptions(array $argv): array
 {
@@ -76,8 +77,9 @@ function parseOptions(array $argv): array
         'verbose' => false,
         'help' => false,
         'root' => getcwd() ?: '.',
-        'dirs' => ['app', 'vendor'],
-        'extensions' => ['php', 'phtml', 'xml'],
+        'scope' => 'both',
+        'dirs' => [],
+        'extensions' => [],
         'exclude' => [],
     ];
 
@@ -102,6 +104,33 @@ function parseOptions(array $argv): array
             continue;
         }
 
+        if (strpos($arg, '--scope=') === 0) {
+            $scope = normalizeScope(substr($arg, 8));
+            if ($scope === null) {
+                fwrite(STDERR, "Invalid scope. Use app, vendor, or both.\n\n");
+                fwrite(STDERR, helpText());
+                exit(1);
+            }
+
+            $options['scope'] = $scope;
+            continue;
+        }
+
+        if ($arg === '--app-only') {
+            $options['scope'] = 'app';
+            continue;
+        }
+
+        if ($arg === '--vendor-only') {
+            $options['scope'] = 'vendor';
+            continue;
+        }
+
+        if ($arg === '--both') {
+            $options['scope'] = 'both';
+            continue;
+        }
+
         if (strpos($arg, '--dir=') === 0) {
             $options['dirs'][] = substr($arg, 6);
             continue;
@@ -122,15 +151,50 @@ function parseOptions(array $argv): array
         exit(1);
     }
 
-    if ($options['dirs'] !== ['app', 'vendor']) {
-        $options['dirs'] = array_slice($options['dirs'], 2);
+    if ($options['dirs'] === []) {
+        $options['dirs'] = dirsForScope($options['scope']);
     }
 
-    if ($options['extensions'] !== ['php', 'phtml', 'xml']) {
-        $options['extensions'] = array_slice($options['extensions'], 3);
+    if ($options['extensions'] === []) {
+        $options['extensions'] = ['php', 'phtml', 'xml'];
     }
 
     return $options;
+}
+
+function normalizeScope(string $scope): ?string
+{
+    $scope = strtolower(trim($scope));
+
+    if ($scope === 'app' || $scope === 'app-only') {
+        return 'app';
+    }
+
+    if ($scope === 'vendor' || $scope === 'vendor-only') {
+        return 'vendor';
+    }
+
+    if ($scope === 'both') {
+        return 'both';
+    }
+
+    return null;
+}
+
+/**
+ * @return list<string>
+ */
+function dirsForScope(string $scope): array
+{
+    if ($scope === 'app') {
+        return ['app'];
+    }
+
+    if ($scope === 'vendor') {
+        return ['vendor'];
+    }
+
+    return ['app', 'vendor'];
 }
 
 function helpText(): string
@@ -143,13 +207,19 @@ Options:
   --dry-run          List files that would change without writing them.
   --verbose, -v      Print every stripped file.
   --root=PATH        Project root. Defaults to the current working directory.
+  --scope=SCOPE      Scan app, vendor, or both. Defaults to both.
+  --app-only         Shortcut for --scope=app.
+  --vendor-only      Shortcut for --scope=vendor.
+  --both             Shortcut for --scope=both.
   --dir=PATH         Directory to scan. May be passed more than once.
   --ext=EXT          Extension to scan. May be passed more than once.
   --exclude=PATH     Relative path to skip. May be passed more than once.
   --help, -h         Show this help.
 
 Defaults:
-  --dir=app --dir=vendor --ext=php --ext=phtml --ext=xml
+  --scope=both --ext=php --ext=phtml --ext=xml
+
+Passing --dir overrides --scope.
 
 HELP;
 }

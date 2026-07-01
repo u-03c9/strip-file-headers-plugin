@@ -25,12 +25,35 @@ Composer dependencies cannot normally inject root `scripts` into the consuming p
 From the consuming project:
 
 ```sh
+composer config repositories.strip-file-headers path /absolute/path/to/strip-file-headers-plugin
+composer config allow-plugins.u-03c9/strip-file-headers-plugin true
+composer require u-03c9/strip-file-headers-plugin:@dev
+```
+
+## Install From GitHub
+
+If the package is hosted at `https://github.com/u-03c9/strip-file-headers-plugin`, users can install it directly as a VCS repository:
+
+```sh
 composer config repositories.strip-file-headers vcs https://github.com/u-03c9/strip-file-headers-plugin
 composer config allow-plugins.u-03c9/strip-file-headers-plugin true
 composer require u-03c9/strip-file-headers-plugin:dev-main
 ```
 
-For Packagist or a private VCS repository, rename the package in `composer.json`, publish it, then require that package instead.
+After tagging a release:
+
+```sh
+git tag v1.0.0
+git push origin v1.0.0
+```
+
+Users can install the release with:
+
+```sh
+composer require u-03c9/strip-file-headers-plugin:^1.0
+```
+
+If the package is submitted to Packagist, users do not need the `repositories.strip-file-headers` command.
 
 ## Manual Use
 
@@ -39,6 +62,8 @@ The package also exposes a Composer binary:
 ```sh
 vendor/bin/strip-file-headers --dry-run
 vendor/bin/strip-file-headers --verbose
+vendor/bin/strip-file-headers --scope=app --dry-run
+vendor/bin/strip-file-headers --scope=vendor --verbose
 ```
 
 ## Configuration
@@ -50,9 +75,39 @@ Defaults match the original script:
     "extra": {
         "strip-file-headers": {
             "enabled": true,
-            "dirs": ["app", "vendor"],
+            "scope": "both",
             "extensions": ["php", "phtml", "xml"],
             "exclude": []
+        }
+    }
+}
+```
+
+Use `scope` to choose where the automatic Composer hook runs:
+
+```json
+{
+    "extra": {
+        "strip-file-headers": {
+            "scope": "vendor"
+        }
+    }
+}
+```
+
+Allowed values are:
+
+- `both`: scan `app/` and `vendor/`
+- `app`: scan `app/` only
+- `vendor`: scan `vendor/` only
+
+For custom paths, use `dirs`. When `dirs` is set, it overrides `scope`:
+
+```json
+{
+    "extra": {
+        "strip-file-headers": {
+            "dirs": ["app/code", "vendor"]
         }
     }
 }
