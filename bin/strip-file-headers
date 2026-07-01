@@ -44,6 +44,7 @@ if (!$autoloaded) {
 $config = StripperConfig::fromCliOptions([
     'root' => $options['root'],
     'scope' => $options['scope'],
+    'scopes' => $options['scopes'],
     'dirs' => $options['dirs'],
     'extensions' => $options['extensions'],
     'exclude' => $options['exclude'],
@@ -68,7 +69,7 @@ printf(
 
 /**
  * @param list<string> $argv
- * @return array{dry-run: bool, verbose: bool, help: bool, root: string, scope: string, dirs: list<string>, extensions: list<string>, exclude: list<string>}
+ * @return array{dry-run: bool, verbose: bool, help: bool, root: string, scope: string, scopes: list<string>, dirs: list<string>, extensions: list<string>, exclude: list<string>}
  */
 function parseOptions(array $argv): array
 {
@@ -77,7 +78,8 @@ function parseOptions(array $argv): array
         'verbose' => false,
         'help' => false,
         'root' => getcwd() ?: '.',
-        'scope' => 'both',
+        'scope' => 'vendor',
+        'scopes' => [],
         'dirs' => [],
         'extensions' => [],
         'exclude' => [],
@@ -113,6 +115,18 @@ function parseOptions(array $argv): array
             }
 
             $options['scope'] = $scope;
+            continue;
+        }
+
+        if (strpos($arg, '--add-scope=') === 0) {
+            $scope = normalizeScope(substr($arg, 12));
+            if ($scope === null) {
+                fwrite(STDERR, "Invalid scope. Use app, vendor, or both.\n\n");
+                fwrite(STDERR, helpText());
+                exit(1);
+            }
+
+            $options['scopes'][] = $scope;
             continue;
         }
 
@@ -207,7 +221,8 @@ Options:
   --dry-run          List files that would change without writing them.
   --verbose, -v      Print every stripped file.
   --root=PATH        Project root. Defaults to the current working directory.
-  --scope=SCOPE      Scan app, vendor, or both. Defaults to both.
+  --scope=SCOPE      Scan app, vendor, or both. Defaults to vendor.
+  --add-scope=SCOPE  Add app, vendor, or both. May be passed more than once.
   --app-only         Shortcut for --scope=app.
   --vendor-only      Shortcut for --scope=vendor.
   --both             Shortcut for --scope=both.
@@ -217,9 +232,9 @@ Options:
   --help, -h         Show this help.
 
 Defaults:
-  --scope=both --ext=php --ext=phtml --ext=xml
+  --scope=vendor --ext=php --ext=phtml --ext=xml
 
-Passing --dir overrides --scope.
+Passing --dir overrides --scope. Passing --add-scope adds to either set.
 
 HELP;
 }

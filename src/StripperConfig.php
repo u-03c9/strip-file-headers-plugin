@@ -8,6 +8,10 @@ use Composer\Composer;
 
 final class StripperConfig
 {
+    private const DEFAULT_DIRS = ['vendor'];
+    private const DEFAULT_EXTENSIONS = ['php', 'phtml', 'xml'];
+    private const DEFAULT_SCOPE = 'vendor';
+
     public string $root;
 
     /**
@@ -34,8 +38,8 @@ final class StripperConfig
      */
     public function __construct(
         string $root,
-        array $dirs = ['app', 'vendor'],
-        array $extensions = ['php', 'phtml', 'xml'],
+        array $dirs = self::DEFAULT_DIRS,
+        array $extensions = self::DEFAULT_EXTENSIONS,
         array $exclude = [],
         bool $enabled = true
     ) {
@@ -58,14 +62,10 @@ final class StripperConfig
 
         $root = self::defaultRoot($composer);
 
-        $dirs = array_key_exists('dirs', $settings)
-            ? self::listSetting($settings, 'dirs', ['app', 'vendor'])
-            : self::dirsForScope(self::stringSetting($settings, 'scope', 'both'));
-
         return new self(
             self::stringSetting($settings, 'root', $root),
-            $dirs,
-            self::listSetting($settings, 'extensions', ['php', 'phtml', 'xml']),
+            self::dirsFromSettings($settings),
+            self::listSetting($settings, 'extensions', self::DEFAULT_EXTENSIONS),
             self::listSetting($settings, 'exclude', []),
             self::boolSetting($settings, 'enabled', true)
         );
@@ -78,14 +78,10 @@ final class StripperConfig
     {
         $root = self::stringSetting($settings, 'root', getcwd() ?: '.');
 
-        $dirs = array_key_exists('dirs', $settings)
-            ? self::listSetting($settings, 'dirs', ['app', 'vendor'])
-            : self::dirsForScope(self::stringSetting($settings, 'scope', 'both'));
-
         return new self(
             $root,
-            $dirs,
-            self::listSetting($settings, 'extensions', ['php', 'phtml', 'xml']),
+            self::dirsFromSettings($settings),
+            self::listSetting($settings, 'extensions', self::DEFAULT_EXTENSIONS),
             self::listSetting($settings, 'exclude', []),
             self::boolSetting($settings, 'enabled', true)
         );
@@ -169,9 +165,32 @@ final class StripperConfig
     }
 
     /**
+     * @param array<string, mixed> $settings
      * @return list<string>
      */
-    private static function dirsForScope(string $scope): array
+    private static function dirsFromSettings(array $settings): array
+    {
+        $dirs = array_key_exists('dirs', $settings)
+            ? self::listSetting($settings, 'dirs', self::DEFAULT_DIRS)
+            : self::dirsForScope(self::stringSetting($settings, 'scope', self::DEFAULT_SCOPE));
+
+        if (!array_key_exists('scopes', $settings)) {
+            return $dirs;
+        }
+
+        foreach (self::listSetting($settings, 'scopes', []) as $scope) {
+            foreach (self::dirsForScope($scope, []) as $dir) {
+                $dirs[] = $dir;
+            }
+        }
+
+        return $dirs;
+    }
+
+    /**
+     * @return list<string>
+     */
+    private static function dirsForScope(string $scope, ?array $default = null): array
     {
         switch (strtolower($scope)) {
             case 'app':
@@ -183,8 +202,10 @@ final class StripperConfig
                 return ['vendor'];
 
             case 'both':
-            default:
                 return ['app', 'vendor'];
+
+            default:
+                return $default ?? self::DEFAULT_DIRS;
         }
     }
 

@@ -1,6 +1,6 @@
 # Strip File Headers Composer Plugin
 
-Composer plugin that removes leading license/doc-block comments from `.php`, `.phtml`, and `.xml` files under `app/` and `vendor/` after `composer install` and `composer update`.
+Composer plugin that removes leading license/doc-block comments from `.php`, `.phtml`, and `.xml` files under `vendor/` after dev-mode `composer install` and `composer update` runs.
 
 This packages the behavior you would otherwise add to a root project like this:
 
@@ -27,7 +27,7 @@ From the consuming project:
 ```sh
 composer config repositories.strip-file-headers path /absolute/path/to/strip-file-headers-plugin
 composer config allow-plugins.u-03c9/strip-file-headers-plugin true
-composer require u-03c9/strip-file-headers-plugin:@dev
+composer require --dev u-03c9/strip-file-headers-plugin:@dev
 ```
 
 ## Install From GitHub
@@ -37,7 +37,7 @@ If the package is hosted at `https://github.com/u-03c9/strip-file-headers-plugin
 ```sh
 composer config repositories.strip-file-headers vcs https://github.com/u-03c9/strip-file-headers-plugin
 composer config allow-plugins.u-03c9/strip-file-headers-plugin true
-composer require u-03c9/strip-file-headers-plugin:dev-main
+composer require --dev u-03c9/strip-file-headers-plugin:dev-main
 ```
 
 After tagging a release:
@@ -50,10 +50,12 @@ git push origin v1.0.0
 Users can install the release with:
 
 ```sh
-composer require u-03c9/strip-file-headers-plugin:^1.0
+composer require --dev u-03c9/strip-file-headers-plugin:^1.0
 ```
 
 If the package is submitted to Packagist, users do not need the `repositories.strip-file-headers` command.
+
+Install it as a dev dependency. The automatic Composer hook skips runs where Composer is operating without dev dependencies, such as `composer install --no-dev`.
 
 ## Manual Use
 
@@ -63,19 +65,21 @@ The package also exposes a Composer binary:
 vendor/bin/strip-file-headers --dry-run
 vendor/bin/strip-file-headers --verbose
 vendor/bin/strip-file-headers --scope=app --dry-run
+vendor/bin/strip-file-headers --add-scope=app --dry-run
 vendor/bin/strip-file-headers --scope=vendor --verbose
 ```
 
 ## Configuration
 
-Defaults match the original script:
+Default configuration:
 
 ```json
 {
     "extra": {
         "strip-file-headers": {
             "enabled": true,
-            "scope": "both",
+            "scope": "vendor",
+            "scopes": [],
             "extensions": ["php", "phtml", "xml"],
             "exclude": []
         }
@@ -83,7 +87,7 @@ Defaults match the original script:
 }
 ```
 
-Use `scope` to choose where the automatic Composer hook runs:
+Use `scope` to choose the base scan location for the automatic Composer hook:
 
 ```json
 {
@@ -97,11 +101,25 @@ Use `scope` to choose where the automatic Composer hook runs:
 
 Allowed values are:
 
-- `both`: scan `app/` and `vendor/`
 - `app`: scan `app/` only
 - `vendor`: scan `vendor/` only
+- `both`: scan `app/` and `vendor/`
 
-For custom paths, use `dirs`. When `dirs` is set, it overrides `scope`:
+Use `scopes` to add named scopes from `composer.json` without replacing the default `vendor/` scan:
+
+```json
+{
+    "extra": {
+        "strip-file-headers": {
+            "scopes": ["app"]
+        }
+    }
+}
+```
+
+This scans both `vendor/` and `app/`.
+
+For custom paths, use `dirs`. When `dirs` is set, it overrides the base `scope`; `scopes` is still appended:
 
 ```json
 {

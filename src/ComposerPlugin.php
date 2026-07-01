@@ -52,6 +52,11 @@ final class ComposerPlugin implements PluginInterface, EventSubscriberInterface
             return;
         }
 
+        if (!$event->isDevMode()) {
+            $io->write('<info>[strip-file-headers] skipped because Composer is running without dev dependencies.</info>', true, IOInterface::VERBOSE);
+            return;
+        }
+
         $verbose = $io->isVerbose();
         $stripper = new HeaderStripper();
         $result = $stripper->strip(
